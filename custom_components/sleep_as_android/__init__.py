@@ -273,7 +273,7 @@ class SleepAsAndroidInstance:
             _LOGGER.critical(f"Could not subscribe to topic {self.topic_template}")
 
 
-    async def get_sensors(self, device) -> Tuple[List[SleepAsAndroidSensor], bool]:
+    def get_sensors(self, device) -> Tuple[List[SleepAsAndroidSensor], bool]:
         """Get sensor by it's name."""
         is_new = False
         if not device in self.__sensors:
