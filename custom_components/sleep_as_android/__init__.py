@@ -41,7 +41,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     hass.data[DOMAIN][config_entry.entry_id] = instance
 
     result = await hass.config_entries.async_forward_entry_setups(
-        config_entry, Platform.SENSOR
+        config_entry, [Platform.SENSOR]
     )
     config_entry.async_on_unload(config_entry.add_update_listener(async_update_options))
     
