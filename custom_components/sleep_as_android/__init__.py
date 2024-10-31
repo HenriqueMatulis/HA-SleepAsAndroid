@@ -213,11 +213,13 @@ class SleepAsAndroidInstance:
 
             _LOGGER.debug("Got message %s", msg)
             device_name = self.device_name_from_topic(msg.topic)
+            sensors, is_new = self.get_sensors(device_name)
             async def routine():
-                sensors = await self.get_sensors(device_name, async_add_entities)
+                if is_new:
+                    await async_add_entities(sensors, True)
                 for sensor in sensors:
                     sensor.process_message(msg)
-            self.hass.loop.create_task(routine())
+            self.hass.async_create_task(routine())
 
         async def subscribe_2022_03(
             _hass: HomeAssistant, _state, _topic: dict
@@ -271,13 +273,14 @@ class SleepAsAndroidInstance:
             _LOGGER.critical(f"Could not subscribe to topic {self.topic_template}")
 
 
-    async def get_sensors(self, device, async_add_entities) -> List[SleepAsAndroidSensor]:
+    async def get_sensors(self, device) -> Tuple[List[SleepAsAndroidSensor], bool]:
         """Get sensor by it's name."""
+        is_new = False
         if not device in self.__sensors:
             self.__sensors[device] = []
             self.__sensors[device].append(SleepAsAndroidLastEvent(device))
-            await async_add_entities(self.__sensors[device], True)
-        return self.__sensors[device]
+            is_new = True
+        return self.__sensors[device], is_new
 
     async def _get_version(self) -> None:
         ha_version = HaVersion()
