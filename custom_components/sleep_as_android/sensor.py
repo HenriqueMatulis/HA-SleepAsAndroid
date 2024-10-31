@@ -121,4 +121,4 @@ class SleepAsAndroidIsAsleep(SleepAsAndroidState):
             SleepTrackingEvent.AWAKE: 'awake',
             SleepTrackingEvent.NOT_AWAKE: 'sleeping',
         }
-        super().__init__(device, "is_asleep", "mdi:sleep", )
+        super().__init__(device, "is_asleep", "mdi:sleep", mapping)
