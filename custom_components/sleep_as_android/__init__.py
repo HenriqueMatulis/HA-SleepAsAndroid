@@ -10,6 +10,7 @@ from typing import Callable, List, Tuple
 from awesomeversion import AwesomeVersion
 from homeassistant.components.mqtt import subscription
 from homeassistant.components.mqtt.subscription import EntitySubscription
+from homeassistant import loader
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
@@ -36,13 +37,17 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
 
-    instance = SleepAsAndroidInstance(hass, config_entry)
-    hass.data[DOMAIN][config_entry.entry_id] = instance
 
     await hass.config_entries.async_forward_entry_setups(
         config_entry, [Platform.SENSOR]
     )
+    [platform] = entity_platform.async_get_platforms(hass, DOMAIN)
+    instance = SleepAsAndroidInstance(hass, config_entry, platform)
+    hass.data[DOMAIN][config_entry.entry_id] = instance
+
+
     config_entry.async_on_unload(config_entry.add_update_listener(async_update_options))
+    await instance.subscribe_root_topic()
     return True
 
 
@@ -79,11 +84,12 @@ async def async_remove_config_entry_device(
 class SleepAsAndroidInstance:
     """Instance for MQTT communication."""
 
-    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry):
+    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, platform: entity_platform.EntityPlatform):
         """Initialize entry."""
         self.hass = hass
         self._config_entry = config_entry
         self._subscription_state = None
+        self._platform = platform
         self._ha_version: AwesomeVersion | None = None
         self.__sensors: dict[str, List[SleepAsAndroidSensor]] = {}
 
@@ -213,10 +219,9 @@ class SleepAsAndroidInstance:
             _LOGGER.debug("Got message %s", msg)
             device_name = self.device_name_from_topic(msg.topic)
             sensors, is_new = self.get_sensors(device_name)
-            platform : entity_platform.EntityPlatform  = entity_platform.async_get_platforms(self.hass, DOMAIN)
             async def routine():
                 if is_new:
-                    await platform.async_add_entities(sensors, True)
+                    await self._platform.async_add_entities(sensors, True)
                 for sensor in sensors:
                     sensor.process_message(msg)
             self.hass.async_create_task(routine())
