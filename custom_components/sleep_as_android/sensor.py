@@ -94,29 +94,31 @@ class SleepAsAndroidLastEvent(SleepAsAndroidSensor):
             self.async_write_ha_state()
 
 
-class SleepState(enum.Enum):
-    SLEEPING = 'sleeping'
-    AWAKE = 'awake'
-
-class SleepAsAndroidIsAsleep(SleepAsAndroidSensor):
-    _attr_icon = "mdi:sleep"
+class SleepAsAndroidState(SleepAsAndroidSensor):
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = [
-        STATE_UNKNOWN,
-        SleepState.SLEEPING.value,
-        SleepState.AWAKE.value
-    ]
 
-    def __init__(self, device: str):
-        super().__init__(device, "is_asleep")
+    def __init__(self, device: str, name: str, icon: str, mapping: Dict[SleepTrackingEvent, str]):
+        super().__init__(device, name)
         self._attr_native_value: str = STATE_UNKNOWN
+        self._attr_icon = icon
+        self._attr_options = [
+            STATE_UNKNOWN,
+            *mapping.values()
+        ]
+        self._mapping = mapping
 
     def _process_message(self, event: SleepTrackingEvent, _values):
-        if event == SleepTrackingEvent.AWAKE:
-            event = SleepState.AWAKE.value
-        elif event == SleepTrackingEvent.NOT_AWAKE:
-            event = SleepState.SLEEPING.value
-        else:
-            return
-        self._attr_native_value = event
-        self.async_write_ha_state()
+        if event in self._mapping:
+            self._attr_native_value = self._mapping[event]
+            self.async_write_ha_state()
+
+class SleepAsAndroidIsAsleep(SleepAsAndroidState):
+    _attr_icon = "mdi:sleep"
+    _attr_device_class = SensorDeviceClass.ENUM
+
+    def __init__(self, device: str):
+        mapping = {
+            SleepTrackingEvent.AWAKE: 'awake',
+            SleepTrackingEvent.NOT_AWAKE: 'sleeping',
+        }
+        super().__init__(device, "is_asleep", "mdi:sleep", )
