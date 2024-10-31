@@ -276,9 +276,10 @@ class SleepAsAndroidInstance:
         if not device in self.__sensors:
             self.__sensors[device] = []
             self.__sensors[device].append(SleepAsAndroidLastEvent(device))
+            async def wrapper():
+                await async_add_entities(self.__sensors[device], True)
             asyncio.run_coroutine_threadsafe(
-                async_add_entities(self.__sensors[device], True), self.hass.loop
-                ).result()
+                wrapper(),self.hass.loop).result()
             
         return self.__sensors[device]
 
