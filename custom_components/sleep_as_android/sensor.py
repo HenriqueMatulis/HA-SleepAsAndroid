@@ -93,7 +93,6 @@ class SleepAsAndroidLastEvent(SleepAsAndroidSensor):
 
     def _process_message(self, event: str, values: Dict[str, str]):
         self._attr_extra_state_attributes = values
-        _LOGGER.warning("_attr_options '%s' ", self._attr_options)
         if self.state != event:
             self._attr_native_value = event
             self.async_write_ha_state()
