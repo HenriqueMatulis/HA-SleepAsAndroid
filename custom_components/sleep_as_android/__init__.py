@@ -29,7 +29,7 @@ async def async_setup(_hass: HomeAssistant, _config_entry: ConfigEntry):
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     """Set up the integration based on config_flow."""
     _LOGGER.info("Setting up %s ", config_entry.entry_id)
 
@@ -45,7 +45,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     )
     config_entry.async_on_unload(config_entry.add_update_listener(async_update_options))
     
-    await instance.subscribe_root_topic(async_add_entities)
     return result
 
 

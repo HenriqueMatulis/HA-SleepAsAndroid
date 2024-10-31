@@ -10,6 +10,7 @@ from homeassistant.components.sensor import RestoreSensor, SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_registry import async_entries_for_config_entry
 
 from .const import DOMAIN, sleep_tracking_events
 from .device_trigger import TRIGGERS
@@ -18,6 +19,13 @@ if TYPE_CHECKING:
     from . import SleepAsAndroidInstance
 
 _LOGGER = logging.getLogger(__name__)
+
+async def async_setup_entry(
+    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
+):
+    instance: SleepAsAndroidInstance = hass.data[DOMAIN][config_entry.entry_id]
+    await instance.subscribe_root_topic(async_add_entities)
+    return True
 
 
 class SleepAsAndroidSensor(abc.ABC, RestoreSensor):
