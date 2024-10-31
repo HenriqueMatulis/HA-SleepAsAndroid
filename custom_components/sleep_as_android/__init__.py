@@ -20,7 +20,7 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from pyhaversion import HaVersion
 
 from .const import DEVICE_MACRO, DOMAIN
-from .sensor import SleepAsAndroidSensor, SleepAsAndroidLastEvent
+from .sensor import SleepAsAndroidSensor, SleepAsAndroidLastEvent, SleepAsAndroidIsAsleep
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -221,6 +221,7 @@ class SleepAsAndroidInstance:
             device_registry.async_get(self.hass).async_get_or_create(
                 config_entry_id=self._config_entry.entry_id,
                 identifiers={(DOMAIN, device_name)},
+
             )
             sensors, is_new = self.get_sensors(device_name)
             async def routine():
@@ -288,6 +289,7 @@ class SleepAsAndroidInstance:
         if not device in self.__sensors:
             self.__sensors[device] = []
             self.__sensors[device].append(SleepAsAndroidLastEvent(device))
+            self.__sensors[device].append(SleepAsAndroidIsAsleep(device))
             is_new = True
         return self.__sensors[device], is_new
 
