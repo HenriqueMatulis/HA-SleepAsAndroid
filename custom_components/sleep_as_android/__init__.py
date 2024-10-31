@@ -36,13 +36,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
 
+    instance = SleepAsAndroidInstance(hass, config_entry)
+    hass.data[DOMAIN][config_entry.entry_id] = instance
+
     await hass.config_entries.async_forward_entry_setups(
         config_entry, [Platform.SENSOR]
     )
     config_entry.async_on_unload(config_entry.add_update_listener(async_update_options))
-
-    instance = SleepAsAndroidInstance(hass, config_entry)
-    hass.data[DOMAIN][config_entry.entry_id] = instance
     return True
 
 
