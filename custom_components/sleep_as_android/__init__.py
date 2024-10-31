@@ -15,7 +15,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import NoEntitySpecifiedError
-from homeassistant.helpers import device_registry as dr, entity_platform
+from homeassistant.helpers import device_registry, entity_platform
 from homeassistant.helpers.device_registry import DeviceEntry
 from pyhaversion import HaVersion
 
@@ -74,7 +74,7 @@ async def async_remove_config_entry_device(
     _LOGGER.debug(
         f"Removing device {device_entry.name} ({device_entry.id=}) by user request"
     )
-    dr.async_get(hass).async_remove_device(device_id=device_entry.id)
+    device_registry.async_get(hass).async_remove_device(device_id=device_entry.id)
     instance: SleepAsAndroidInstance = hass.data[DOMAIN][config_entry.entry_id]
     instance.remove_sensor(device_entry.name)
 
@@ -218,6 +218,10 @@ class SleepAsAndroidInstance:
 
             _LOGGER.debug("Got message %s", msg)
             device_name = self.device_name_from_topic(msg.topic)
+            device_registry.async_get(self.hass).async_get_or_create(
+                config_entry_id=self._config_entry,
+                identifiers={(DOMAIN, device_name)},
+            )
             sensors, is_new = self.get_sensors(device_name)
             async def routine():
                 if is_new:
