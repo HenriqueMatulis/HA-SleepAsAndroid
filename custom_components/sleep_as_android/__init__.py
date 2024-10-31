@@ -36,14 +36,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
 
-    instance = SleepAsAndroidInstance(hass, config_entry)
-    hass.data[DOMAIN][config_entry.entry_id] = instance
-
-    result = await hass.config_entries.async_forward_entry_setups(
+    await hass.config_entries.async_forward_entry_setups(
         config_entry, [Platform.SENSOR]
     )
     config_entry.async_on_unload(config_entry.add_update_listener(async_update_options))
-    
+
+    instance = SleepAsAndroidInstance(hass, config_entry)
+    hass.data[DOMAIN][config_entry.entry_id] = instance
     return True
 
 
@@ -86,7 +85,7 @@ class SleepAsAndroidInstance:
         self._config_entry = config_entry
         self._subscription_state = None
         self._ha_version: AwesomeVersion | None = None
-        self._platform = entity_platform.async_get_current_platform()
+        self._platform = entity_platform.async_get_platforms(hass, )
         self.__sensors: dict[str, List[SleepAsAndroidSensor]] = {}
 
         try:
@@ -215,9 +214,10 @@ class SleepAsAndroidInstance:
             _LOGGER.debug("Got message %s", msg)
             device_name = self.device_name_from_topic(msg.topic)
             sensors, is_new = self.get_sensors(device_name)
+            platform : entity_platform.EntityPlatform  = entity_platform.async_get_platforms(self.hass, DOMAIN)
             async def routine():
                 if is_new:
-                    await self._platform.async_add_entities(sensors, True)
+                    await platform.async_add_entities(sensors, True)
                 for sensor in sensors:
                     sensor.process_message(msg)
             self.hass.async_create_task(routine())
