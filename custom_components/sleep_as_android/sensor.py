@@ -1,6 +1,7 @@
 """Sensor for Sleep as android states."""
 
 import abc
+import enum
 import json
 import logging
 from typing import TYPE_CHECKING, Any, Dict
@@ -11,8 +12,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_registry import async_entries_for_config_entry
-
-from .const import DOMAIN, sleep_tracking_events
+from .const import DOMAIN, SleepTrackingEvent, sleep_tracking_events
 from .device_trigger import TRIGGERS
 
 if TYPE_CHECKING:
@@ -54,11 +54,11 @@ class SleepAsAndroidSensor(abc.ABC, RestoreSensor):
         if 'event' not in payload:
             _LOGGER.warning("Got unexpected payload: '%s'", payload)
             return
-        event = payload.pop('event')
+        event = SleepTrackingEvent(payload.pop('event'))
         self._process_message(event, payload)
 
     @abc.abstractmethod
-    def _process_message(self, event: str, values: Dict[str, str]):
+    def _process_message(self, event: SleepTrackingEvent, values: Dict[str, str]):
         """Process new MQTT messages."""
         pass
 
@@ -87,8 +87,36 @@ class SleepAsAndroidLastEvent(SleepAsAndroidSensor):
         self._attr_native_value: str = STATE_UNKNOWN
         self._attr_extra_state_attributes = {}
 
-    def _process_message(self, event: str, values: Dict[str, str]):
+    def _process_message(self, event: SleepTrackingEvent, values: Dict[str, str]):
         self._attr_extra_state_attributes = values
-        if self.state != event:
-            self._attr_native_value = event
+        if self.state != event.value:
+            self._attr_native_value = event.value
             self.async_write_ha_state()
+
+
+class SleepState(enum.Enum):
+    SLEEPING = 'sleeping'
+    AWAKE = 'awake'
+
+class SleepAsAndroidIsAsleep(SleepAsAndroidSensor):
+    _attr_icon = "mdi:sleep"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = [
+        STATE_UNKNOWN,
+        SleepState.SLEEPING.value,
+        SleepState.AWAKE.value
+    ]
+
+    def __init__(self, device: str):
+        super().__init__(device, "is_asleep")
+        self._attr_native_value: str = STATE_UNKNOWN
+
+    def _process_message(self, event: SleepTrackingEvent, _values):
+        if event == SleepTrackingEvent.AWAKE:
+            event = SleepState.AWAKE.value
+        elif event == SleepTrackingEvent.NOT_AWAKE:
+            event = SleepState.SLEEPING.value
+        else:
+            return
+        self._attr_native_value = event
+        self.async_write_ha_state()
