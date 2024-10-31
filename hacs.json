@@ -1,7 +1,7 @@
 {
   "homeassistant":  "2023.4.0",
-  "name": "Sleep As Android",
+  "name": "Sleep As Android - fork 12333",
   "render_readme": true,
-  "zip_release": true,
+  "zip_release": false,
   "filename": "sleep_as_android.zip"
 }
