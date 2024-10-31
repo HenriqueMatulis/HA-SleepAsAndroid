@@ -14,7 +14,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import NoEntitySpecifiedError
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import device_registry as dr, entity_platform
 from homeassistant.helpers.device_registry import DeviceEntry
 from pyhaversion import HaVersion
 
@@ -86,6 +86,7 @@ class SleepAsAndroidInstance:
         self._config_entry = config_entry
         self._subscription_state = None
         self._ha_version: AwesomeVersion | None = None
+        self._platform = entity_platform.async_get_current_platform()
         self.__sensors: dict[str, List[SleepAsAndroidSensor]] = {}
 
         try:
@@ -198,7 +199,7 @@ class SleepAsAndroidInstance:
         return _topic
 
 
-    async def subscribe_root_topic(self, async_add_entities: Callable):
+    async def subscribe_root_topic(self):
         """(Re)Subscribe to topics."""
         _LOGGER.debug(
             "Subscribing to '%s' (generated from '%s')",
@@ -216,7 +217,7 @@ class SleepAsAndroidInstance:
             sensors, is_new = self.get_sensors(device_name)
             async def routine():
                 if is_new:
-                    await async_add_entities(sensors, True)
+                    await self._platform.async_add_entities(sensors, True)
                 for sensor in sensors:
                     sensor.process_message(msg)
             self.hass.async_create_task(routine())

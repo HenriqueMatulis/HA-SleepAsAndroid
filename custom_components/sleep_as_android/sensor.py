@@ -21,10 +21,10 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
+    hass: HomeAssistant, config_entry: ConfigEntry, _async_add_entities
 ):
     instance: SleepAsAndroidInstance = hass.data[DOMAIN][config_entry.entry_id]
-    await instance.subscribe_root_topic(async_add_entities)
+    await instance.subscribe_root_topic()
     return True
 
 
