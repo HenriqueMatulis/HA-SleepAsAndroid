@@ -217,7 +217,7 @@ class SleepAsAndroidInstance:
                 sensors = await self.get_sensors(device_name, async_add_entities)
                 for sensor in sensors:
                     sensor.process_message(msg)
-            self.hass.loop.create_task(routine)
+            self.hass.loop.create_task(routine())
 
         async def subscribe_2022_03(
             _hass: HomeAssistant, _state, _topic: dict
