@@ -14,7 +14,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import NoEntitySpecifiedError
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceEntry
 from pyhaversion import HaVersion
 
@@ -36,8 +36,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
 
-    registry = er.async_get(hass)
-    instance = SleepAsAndroidInstance(hass, config_entry, registry)
+    instance = SleepAsAndroidInstance(hass, config_entry)
     hass.data[DOMAIN][config_entry.entry_id] = instance
 
     result = await hass.config_entries.async_forward_entry_setups(
@@ -71,7 +70,6 @@ async def async_remove_config_entry_device(
     _LOGGER.debug(
         f"Removing device {device_entry.name} ({device_entry.id=}) by user request"
     )
-
     dr.async_get(hass).async_remove_device(device_id=device_entry.id)
     instance: SleepAsAndroidInstance = hass.data[DOMAIN][config_entry.entry_id]
     instance.remove_sensor(device_entry.name)
@@ -82,7 +80,7 @@ async def async_remove_config_entry_device(
 class SleepAsAndroidInstance:
     """Instance for MQTT communication."""
 
-    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, registry: er):
+    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry):
         """Initialize entry."""
         self.hass = hass
         self._config_entry = config_entry
@@ -215,9 +213,11 @@ class SleepAsAndroidInstance:
 
             _LOGGER.debug("Got message %s", msg)
             device_name = self.device_name_from_topic(msg.topic)
-            sensors = self.get_sensors(device_name, async_add_entities)
-            for sensor in sensors:
-                sensor.process_message(msg)
+            async def routine():
+                sensors = await self.get_sensors(device_name, async_add_entities)
+                for sensor in sensors:
+                    sensor.process_message(msg)
+            self.hass.loop.call_soon(routine())
 
         async def subscribe_2022_03(
             _hass: HomeAssistant, _state, _topic: dict
@@ -271,16 +271,12 @@ class SleepAsAndroidInstance:
             _LOGGER.critical(f"Could not subscribe to topic {self.topic_template}")
 
 
-    def get_sensors(self, device, async_add_entities) -> List[SleepAsAndroidSensor]:
+    async def get_sensors(self, device, async_add_entities) -> List[SleepAsAndroidSensor]:
         """Get sensor by it's name."""
         if not device in self.__sensors:
             self.__sensors[device] = []
             self.__sensors[device].append(SleepAsAndroidLastEvent(device))
-            async def wrapper():
-                await async_add_entities(self.__sensors[device], True)
-            asyncio.run_coroutine_threadsafe(
-                wrapper(),self.hass.loop).result()
-            
+            await async_add_entities(self.__sensors[device], True)
         return self.__sensors[device]
 
     async def _get_version(self) -> None:
