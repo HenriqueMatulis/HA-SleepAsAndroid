@@ -85,7 +85,6 @@ class SleepAsAndroidInstance:
         self._config_entry = config_entry
         self._subscription_state = None
         self._ha_version: AwesomeVersion | None = None
-        self._platform = entity_platform.async_get_platforms(hass, )
         self.__sensors: dict[str, List[SleepAsAndroidSensor]] = {}
 
         try:
