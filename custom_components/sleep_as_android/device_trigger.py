@@ -15,11 +15,11 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 import voluptuous as vol
 
-from .const import DOMAIN, sleep_tracking_states
+from .const import DOMAIN, sleep_tracking_events
 
 _LOGGER = logging.getLogger(__name__)
 
-TRIGGERS = sleep_tracking_states + [STATE_UNKNOWN]
+TRIGGERS = sleep_tracking_events + [STATE_UNKNOWN]
 
 TRIGGER_SCHEMA = HA_TRIGGER_BASE_SCHEMA.extend(
     {
