@@ -90,9 +90,6 @@ class SleepAsAndroidLastEvent(SleepAsAndroidSensor):
         super().__init__(device, "last_event")
         self._attr_native_value: str = STATE_UNKNOWN
         self._attr_extra_state_attributes = {}
-        self._set_attributes(
-            {}
-        )
 
     def _process_message(self, event: str, values: Dict[str, str]):
         self._attr_extra_state_attributes = values
