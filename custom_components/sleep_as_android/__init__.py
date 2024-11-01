@@ -37,7 +37,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
 
-    instance = SleepAsAndroidInstance(hass, config_entry, platform)
+    instance = SleepAsAndroidInstance(hass, config_entry)
     hass.data[DOMAIN][config_entry.entry_id] = instance
 
     await hass.config_entries.async_forward_entry_setups(
@@ -83,12 +83,11 @@ async def async_remove_config_entry_device(
 class SleepAsAndroidInstance:
     """Instance for MQTT communication."""
 
-    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, platform: entity_platform.EntityPlatform):
+    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry):
         """Initialize entry."""
         self.hass = hass
         self._config_entry = config_entry
         self._subscription_state = None
-        self._platform = platform
         self._ha_version: AwesomeVersion | None = None
         self.__sensors: dict[str, List[SleepAsAndroidSensor]] = {}
 
