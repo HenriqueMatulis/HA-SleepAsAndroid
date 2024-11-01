@@ -9,18 +9,32 @@ from typing import TYPE_CHECKING, Any, Dict
 from homeassistant.components import mqtt 
 from homeassistant.components.sensor import RestoreSensor, SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_registry import async_entries_for_config_entry
-from .const import DOMAIN, SleepTrackingEvent, sleep_tracking_events
-from .device_trigger import TRIGGERS
+from homeassistant.helpers import entity_registry, entity_platform, device_registry
+from .const import DOMAIN, SleepTrackingEvent
 
 if TYPE_CHECKING:
     from . import SleepAsAndroidInstance
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(_hass, _config_entry, _async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: entity_platform.AddEntitiesCallback):
+    instance: SleepAsAndroidInstance = hass.data[DOMAIN][config_entry.entry_id]
+    entities = entity_registry.async_entries_for_config_entry(
+        instance.entity_registry, config_entry.entry_id
+    )
+
+    dr = device_registry.async_get(hass)
+    sensors = []
+    for entity in entities:
+        device_name = dr.async_get(entity.device_id)
+        s, is_new = instance.get_sensors(device_name)
+        if is_new:
+            sensors.extend(s)
+    async_add_entities(sensors)
+    platform = entity_platform.async_get_current_platform()
+    await instance.subscribe_root_topic(platform)
     return True
 
 

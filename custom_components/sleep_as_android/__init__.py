@@ -37,17 +37,16 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
 
+    instance = SleepAsAndroidInstance(hass, config_entry, platform)
+    hass.data[DOMAIN][config_entry.entry_id] = instance
 
     await hass.config_entries.async_forward_entry_setups(
         config_entry, [Platform.SENSOR]
     )
-    [platform] = entity_platform.async_get_platforms(hass, DOMAIN)
-    instance = SleepAsAndroidInstance(hass, config_entry, platform)
-    hass.data[DOMAIN][config_entry.entry_id] = instance
-
-
     config_entry.async_on_unload(config_entry.add_update_listener(async_update_options))
-    await instance.subscribe_root_topic()
+
+    # [platform] = entity_platform.async_get_platforms(hass, DOMAIN)
+    # await instance.subscribe_root_topic(platform)
     return True
 
 
@@ -203,7 +202,7 @@ class SleepAsAndroidInstance:
         return _topic
 
 
-    async def subscribe_root_topic(self):
+    async def subscribe_root_topic(self, platform):
         """(Re)Subscribe to topics."""
         _LOGGER.debug(
             "Subscribing to '%s' (generated from '%s')",
@@ -221,7 +220,7 @@ class SleepAsAndroidInstance:
             sensors, is_new = self.get_sensors(device_name)
             async def routine():
                 if is_new:
-                    await self._platform.async_add_entities(sensors, True)
+                    await platform.async_add_entities(sensors, True)
                 for sensor in sensors:
                     sensor.process_message(msg)
             self.hass.async_create_task(routine())
