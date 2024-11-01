@@ -218,11 +218,6 @@ class SleepAsAndroidInstance:
 
             _LOGGER.debug("Got message %s", msg)
             device_name = self.device_name_from_topic(msg.topic)
-            device_registry.async_get(self.hass).async_get_or_create(
-                config_entry_id=self._config_entry.entry_id,
-                identifiers={(DOMAIN, device_name)},
-
-            )
             sensors, is_new = self.get_sensors(device_name)
             async def routine():
                 if is_new:

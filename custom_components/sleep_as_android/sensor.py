@@ -70,28 +70,11 @@ class SleepAsAndroidSensor(abc.ABC, RestoreSensor):
     @property
     def device_info(self):
         """Device info for sensor."""
-        return {"identifiers": {(DOMAIN, self._device)}}
-
-class SleepAsAndroidLastEvent(SleepAsAndroidSensor):
-    """Last event received from Sleep as Android.
-    """
-    _attr_icon = "mdi:arrow-right-thick"
-    _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = [
-        STATE_UNKNOWN,
-        *sleep_tracking_events,
-    ]
-
-    def __init__(self, device: str):
-        super().__init__(device, "last_event")
-        self._attr_native_value: str = STATE_UNKNOWN
-        self._attr_extra_state_attributes = {}
-
-    def _process_message(self, event: SleepTrackingEvent, values: Dict[str, str]):
-        self._attr_extra_state_attributes = values
-        if self.state != event.value:
-            self._attr_native_value = event.value
-            self.async_write_ha_state()
+        return {
+            "identifiers": {(DOMAIN, self._device)},
+            "connections": set(),
+            "name": self._device
+            }
 
 
 class SleepAsAndroidState(SleepAsAndroidSensor):
@@ -112,13 +95,24 @@ class SleepAsAndroidState(SleepAsAndroidSensor):
             self._attr_native_value = self._mapping[event]
             self.async_write_ha_state()
 
-class SleepAsAndroidIsAsleep(SleepAsAndroidState):
-    _attr_icon = "mdi:sleep"
-    _attr_device_class = SensorDeviceClass.ENUM
 
+class SleepAsAndroidLastEvent(SleepAsAndroidState):
+    """Last event received from Sleep as Android."""
+    def __init__(self, device: str):
+        mapping = {e: e.value for e in SleepTrackingEvent}
+        super().__init__(device, "last_event", "mdi:arrow-right-thick", mapping)
+
+    def _process_message(self, event: SleepTrackingEvent, values: Dict[str, str]):
+        self._attr_extra_state_attributes = values
+        super()._process_message(event, values)
+
+
+class SleepAsAndroidIsAsleep(SleepAsAndroidState):
     def __init__(self, device: str):
         mapping = {
             SleepTrackingEvent.AWAKE: 'awake',
             SleepTrackingEvent.NOT_AWAKE: 'sleeping',
+            SleepTrackingEvent.SLEEP_TRACKING_STOPPED: STATE_UNKNOWN,
+            SleepTrackingEvent.SLEEP_TRACKING_PAUSED: STATE_UNKNOWN,
         }
         super().__init__(device, "is_asleep", "mdi:sleep", mapping)
