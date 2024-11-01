@@ -54,8 +54,11 @@ class SleepAsAndroidSensor(abc.ABC, RestoreSensor):
         if 'event' not in payload:
             _LOGGER.warning("Got unexpected payload: '%s'", payload)
             return
-        event = SleepTrackingEvent(payload.pop('event'))
-        self._process_message(event, payload)
+        event = payload.pop('event')
+        if event == 'Unknown':
+            _LOGGER.warning("Successfuly got testing message: '%s'", msg.payload)
+        else:
+            self._process_message(SleepTrackingEvent(event), payload)
 
     @abc.abstractmethod
     def _process_message(self, event: SleepTrackingEvent, values: Dict[str, str]):
