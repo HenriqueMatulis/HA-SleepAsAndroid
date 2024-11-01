@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: entity_platform.AddEntitiesCallback):
     instance: SleepAsAndroidInstance = hass.data[DOMAIN][config_entry.entry_id]
     entities = entity_registry.async_entries_for_config_entry(
-        instance.entity_registry, config_entry.entry_id
+        entity_registry.async_get(hass), config_entry.entry_id
     )
 
     dr = device_registry.async_get(hass)
