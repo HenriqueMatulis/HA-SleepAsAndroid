@@ -28,7 +28,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     dr = device_registry.async_get(hass)
     sensors = []
     for entity in entities:
-        device_name = dr.async_get(entity.device_id)
+        device_name = dr.async_get(entity.device_id).name
         s, is_new = instance.get_sensors(device_name)
         if is_new:
             sensors.extend(s)
